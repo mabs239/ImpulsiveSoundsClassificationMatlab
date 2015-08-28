@@ -58,7 +58,7 @@ function calculateFeatures
     pathN = ['C:\Users\AbuBakar\Dropbox\' ...
                 'SharedWithAbdulRasheed\Sounds\'];
     classN = ({'yes\', 'no\','test\'});
-    % function Features = computeFeaturesDirectory(classNames)
+    
     % This function computes the audio features (6-D vector) for each .wav
     % file in all directories (given in classNames)
     Dim = 6; % Number of features per window
@@ -67,19 +67,22 @@ function calculateFeatures
     FeaturesNames = {'Std Energy Entropy','Std/mean ZCR',... 
                     'Std Rolloff','Std Spectral Centroid', ...
                     'Std Spectral Flux','Std/mean Energy'};
-    for (c=1:length(classN)) % for each class (respective directories):
+    for c = 1:length(classN) % for each class (respective directories):
         fprintf('Computing features for class %s...\n',classN{c});
         [pathN '//' classN{c} '//*.wav']
         D = dir([pathN '//' classN{c} '//*.wav'])
         tempF = [];
+        
         % tempF = zeros(length(D),Dim);
-        for (i=1:length(D)) % for each .wav file in the current directory:
+        for i = 1:length(D) % for each .wav file in the current directory:
             F = computeAllStatistics([pathN '//' classN{c} '//' D(i).name], win, step);     
             tempF = [tempF; F];
         end
+        
         % keep a different cell element for each feature matrix:
         Features{c} = tempF;
     end
+    
     Features % Prints dimension of the feature classes
     save('features.mat', 'Features');
 end

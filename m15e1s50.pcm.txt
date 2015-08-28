@@ -1,0 +1,12 @@
+﻿Added matlab file with classification and feature extraction code.
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch master
+#
+# Initial commit
+#
+# Changes to be committed:
+#	new file:   YesNoSeparation.asv
+#	new file:   YesNoSeparation.m
+#
+
