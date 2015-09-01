@@ -1,3 +1,4 @@
+%%
 function main
     close all;
     clear all;
@@ -10,22 +11,40 @@ function main
 %     x1 = [1 2 1]; 
 %     x2 = [1 -4 0]; 
     x1=1;x2=1;
-    sigma = 5;
+%     sigma = 5;
     C = 20; 
     sigma = 0.1;
-    model= svmTrain(X, y, C, @(x1, x2) gaussianKernel(x1, x2, sigma))
 
-    save('model.mat', 'model');
+%     model= svmTrain(X, y, C, @(x1, x2) gaussianKernel(x1, x2, sigma))
+%     save('model.mat', 'model');
+    load('model.mat')
     
-    visualizeBoundary(X, y, model);
+%     visualizeBoundary(X, y, model);
 
-    XSample=[.7 .7;0.9 0.6; .7 .4]
+%     XSample=[.7 .7;2 0.6; .7 .4];
+    XSample=[.7 .7]
     svmPredict(model, XSample)
-
+    
+%     x1=1; x2=0; sigma = .01;    gk = gaussianKernel(x1, x2, sigma)
+    
     fprintf('   ...Program End...\n');
+    
+%     x=3
+%     sqr = @(x,y) x.^y
+%     a = sqr(5,2)
+%     add(3,4)
+    
+  
+    
+end
+%%
+function y=add(a,b,z)
 
+    y=a+b;
+    
 end
 
+%%
 % ========================================================
 %   Assign Binary Flag To Features Vector
 %   
@@ -56,7 +75,7 @@ function [xdata group] = getBinaryFlaggedFeatures()
 %     group = [repmat(1,lf1,1)];
 end
 
-
+%%
 % ========================================================
 %   Calculate Features with the directory names given
 %   Uses computeAllStatistics(fileName, win, step)
@@ -94,7 +113,7 @@ function calculateFeatures
     Features % Prints dimension of the feature classes
     save('features.mat', 'Features');
 end
-
+%%
 % ========================================================
 %   Compute Statistics EE, ZCR, RollOff, Centroid, Flux
 %   with given file name, window length and step
@@ -117,9 +136,14 @@ function FF = computeAllStatistics(fileName, win, step)
     E = ShortTimeEnergy(x, win, step);
     FF = [EE' Z R' C F E];
 end
+%%
+%======================================================%
+% SVM TRAIN %
+%======================================================%
 
 function [model] = svmTrain(X, Y, C, kernelFunction, ...
                             tol, max_passes)
+                        
 %SVMTRAIN Trains an SVM classifier using a simplified version of the SMO 
 %algorithm. 
 %   [model] = SVMTRAIN(X, Y, C, kernelFunction, tol, max_passes) trains an
@@ -139,6 +163,7 @@ function [model] = svmTrain(X, Y, C, kernelFunction, ...
 %           SVMLight (http://svmlight.joachims.org/)
 %
 %
+sprintf('Entering svmTrain ...')
 
 if ~exist('tol', 'var') || isempty(tol)
     tol = 1e-3;
@@ -179,7 +204,7 @@ elseif strfind(func2str(kernelFunction), 'gaussianKernel')
     % This is equivalent to computing the kernel on every pair of examples
     X2 = sum(X.^2, 2);
     K = bsxfun(@plus, X2, bsxfun(@plus, X2', - 2 * (X * X')));
-    K = kernelFunction(1, 0) .^ K;
+    K = kernelFunction(1, 0) .^ K
 else
     % Pre-compute the Kernel Matrix
     % The following can be slow due to the lack of vectorization
@@ -310,6 +335,7 @@ model.alphas= alphas(idx);
 model.w = ((alphas.*Y)'*X)';
 
 end
+%%
 function sim = gaussianKernel(x1, x2, sigma)
 %RBFKERNEL returns a radial basis function kernel between x1 and x2
 %   sim = gaussianKernel(x1, x2) returns a gaussian kernel between x1 and x2
@@ -328,14 +354,11 @@ sim = 0;
 %
 %    
 sim = exp(-((x1 - x2)'*(x1 - x2))/(2 * sigma^2));
-
-
-
-
+[x1 x2 sigma sim sim^.01]
 % =============================================================
     
 end
-
+%%
 function visualizeBoundary(X, y, model, varargin)
 %VISUALIZEBOUNDARY plots a non-linear decision boundary learned by the SVM
 %   VISUALIZEBOUNDARYLINEAR(X, y, model) plots a non-linear decision 
@@ -360,7 +383,7 @@ contour(X1, X2, vals, [0 0], 'Color', 'b');
 hold off;
 
 end
-
+%%
 function plotData(X, y)
 %PLOTDATA Plots the data points X and y into a new figure 
 %   PLOTDATA(x,y) plots the data points with + for the positive examples
@@ -378,9 +401,10 @@ plot(X(neg, 1), X(neg, 2), 'ko', 'MarkerFaceColor', 'y', 'MarkerSize', 7)
 hold off;
 
 end
-
+%%
 
 function pred = svmPredict(model, X)
+
 %SVMPREDICT returns a vector of predictions using a trained SVM model
 %(svmTrain). 
 %   pred = SVMPREDICT(model, X) returns a vector of predictions using a 
@@ -412,6 +436,11 @@ elseif strfind(func2str(model.kernelFunction), 'gaussianKernel')
     X2 = sum(model.X.^2, 2)';
     K = bsxfun(@plus, X1, bsxfun(@plus, X2, - 2 * X * model.X'));
     K = model.kernelFunction(1, 0) .^ K;
+
+Kkk = model.kernelFunction(1, 0)^.01
+model.kernelFunction
+  
+  
     K = bsxfun(@times, model.y', K);
     K = bsxfun(@times, model.alphas', K);
     p = sum(K, 2);
@@ -433,36 +462,7 @@ pred(p >= 0) =  1;
 pred(p <  0) =  0;
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+%%
 
 function [Entropy] = Energy_Entropy_Block(f,winLength,winStep,numOfShortBlocks)
 
@@ -493,7 +493,7 @@ end
 
 
 
-
+%%
 function Z = zcr(signal,windowLength, step, fs);
 signal = signal / max(abs(signal));
 curPos = 1;
@@ -512,7 +512,7 @@ end
 end
 
 
-
+%%
 function mC = SpectralRollOff(signal,windowLength, step, c, fs)
 signal = signal / max(abs(signal));
 curPos = 1;
@@ -536,7 +536,7 @@ for (i=1:numOfFrames)
 end
 end
 
-
+%%
 function En = SpectralEntropy(signal,windowLength,windowStep, fftLength, numOfBins);
 signal = signal / max(abs(signal));
 curPos = 1;
@@ -562,7 +562,7 @@ end
 
 
 
-
+%%
 function C = SpectralCentroid(signal,windowLength, step, fs)
 signal = signal / max(abs(signal));
 curPos = 1;
@@ -586,7 +586,7 @@ C = C / (fs/2);
 end
 
 
-
+%%
 function F = SpectralFlux(signal,windowLength, step, fs)
 signal = signal / max(abs(signal));
 curPos = 1;
@@ -611,7 +611,7 @@ end
 end
 
 
-
+%%
 function E = ShortTimeEnergy(signal, windowLength,step);
 signal = signal / max(max(signal));
 curPos = 1;

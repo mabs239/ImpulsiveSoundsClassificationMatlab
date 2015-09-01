@@ -1,3 +1,4 @@
+%%
 function main
     close all;
     clear all;
@@ -5,24 +6,45 @@ function main
     % fet = [1 2]; % Select two features from 6
     % calculateFeatures();
 %     load('features.mat');
-    [X y] = getBinaryFlaggedFeatures()
+    [X y] = getBinaryFlaggedFeatures();
 
 %     x1 = [1 2 1]; 
 %     x2 = [1 -4 0]; 
     x1=1;x2=1;
-    sigma = 2;
-    C = 5; 
+%     sigma = 5;
+    C = 20; 
     sigma = 0.1;
-    model= svmTrain(X, y, C, @(x1, x2) gaussianKernel(x1, x2, sigma))
-    visualizeBoundary(X, y, model);
 
-    XSample=[.7 .7;0.9 0.6; .7 .4]
+%     model= svmTrain(X, y, C, @(x1, x2) gaussianKernel(x1, x2, sigma))
+%     save('model.mat', 'model');
+    load('model.mat')
+    
+%     visualizeBoundary(X, y, model);
+
+%     XSample=[.7 .7;2 0.6; .7 .4];
+    XSample=[.7 .7]
     svmPredict(model, XSample)
-
+    
+%     x1=1; x2=0; sigma = .01;    gk = gaussianKernel(x1, x2, sigma)
+    
     fprintf('   ...Program End...\n');
+    
+%     x=3
+%     sqr = @(x,y) x.^y
+%     a = sqr(5,2)
+%     add(3,4)
+    
+  
+    
+end
+%%
+function y=add(a,b,z)
 
+    y=a+b;
+    
 end
 
+%%
 % ========================================================
 %   Assign Binary Flag To Features Vector
 %   
@@ -36,20 +58,24 @@ function [xdata group] = getBinaryFlaggedFeatures()
     % Features{2} =  Features{2}(randperm(end),:);
     % Features{3} =  Features{3}(randperm(end),:);
         
-    Features{1} = Features{1}(:,fet); % Shorten features
+    Features{1} = Features{1}(1:50,fet); % Shorten features
     Features{2} = Features{2}(:,fet); % Shorten features
     Features{3} = Features{3}(:,fet); % Shorten features
         
-    lf1 = length(Features{1}); % yes
-    lf2 = length(Features{2}); % no
-    lf3 = length(Features{3}); % test
+    lf1 = length(Features{1}) % yes
+    lf2 = length(Features{2}) % no
+    lf3 = length(Features{3}) % test
  
-    xdata = [Features{1} ; Features{2}];
+    xdata = [Features{1} ; Features{2}; Features{3}];
     % group = [repmat('''yes''',a,1); repmat('''no ''',b,1) ];
-    group = [repmat(1,lf1,1); repmat(0,lf2,1) ];
+    group = [repmat(1,lf1,1); repmat(0,lf2,1); repmat(0,lf3,1)];
+    
+    
+%     xdata = [Features{1}];
+%     group = [repmat(1,lf1,1)];
 end
 
-
+%%
 % ========================================================
 %   Calculate Features with the directory names given
 %   Uses computeAllStatistics(fileName, win, step)
@@ -57,33 +83,37 @@ end
 function calculateFeatures
     pathN = ['C:\Users\AbuBakar\Dropbox\' ...
                 'SharedWithAbdulRasheed\Sounds\'];
-    classN = ({'yes\', 'no\','test\'});
-    % function Features = computeFeaturesDirectory(classNames)
+%     classN = ({'yes\', 'no\','test\'});
+    classN = ({'GunShot\', 'Balloon\','Clapping\'});
+    
     % This function computes the audio features (6-D vector) for each .wav
     % file in all directories (given in classNames)
     Dim = 6; % Number of features per window
     win = 950; 
-    step = 200;
+    step = 2600;
     FeaturesNames = {'Std Energy Entropy','Std/mean ZCR',... 
                     'Std Rolloff','Std Spectral Centroid', ...
                     'Std Spectral Flux','Std/mean Energy'};
-    for (c=1:length(classN)) % for each class (respective directories):
+    for c = 1:length(classN) % for each class (respective directories):
         fprintf('Computing features for class %s...\n',classN{c});
         [pathN '//' classN{c} '//*.wav']
         D = dir([pathN '//' classN{c} '//*.wav'])
         tempF = [];
+        
         % tempF = zeros(length(D),Dim);
-        for (i=1:length(D)) % for each .wav file in the current directory:
+        for i = 1:length(D) % for each .wav file in the current directory:
             F = computeAllStatistics([pathN '//' classN{c} '//' D(i).name], win, step);     
             tempF = [tempF; F];
         end
+        
         % keep a different cell element for each feature matrix:
         Features{c} = tempF;
     end
+    
     Features % Prints dimension of the feature classes
     save('features.mat', 'Features');
 end
-
+%%
 % ========================================================
 %   Compute Statistics EE, ZCR, RollOff, Centroid, Flux
 %   with given file name, window length and step
@@ -106,9 +136,14 @@ function FF = computeAllStatistics(fileName, win, step)
     E = ShortTimeEnergy(x, win, step);
     FF = [EE' Z R' C F E];
 end
+%%
+%======================================================%
+% SVM TRAIN %
+%======================================================%
 
 function [model] = svmTrain(X, Y, C, kernelFunction, ...
                             tol, max_passes)
+                        
 %SVMTRAIN Trains an SVM classifier using a simplified version of the SMO 
 %algorithm. 
 %   [model] = SVMTRAIN(X, Y, C, kernelFunction, tol, max_passes) trains an
@@ -128,6 +163,7 @@ function [model] = svmTrain(X, Y, C, kernelFunction, ...
 %           SVMLight (http://svmlight.joachims.org/)
 %
 %
+sprintf('Entering svmTrain ...')
 
 if ~exist('tol', 'var') || isempty(tol)
     tol = 1e-3;
@@ -168,7 +204,7 @@ elseif strfind(func2str(kernelFunction), 'gaussianKernel')
     % This is equivalent to computing the kernel on every pair of examples
     X2 = sum(X.^2, 2);
     K = bsxfun(@plus, X2, bsxfun(@plus, X2', - 2 * (X * X')));
-    K = kernelFunction(1, 0) .^ K;
+    K = kernelFunction(1, 0) .^ K
 else
     % Pre-compute the Kernel Matrix
     % The following can be slow due to the lack of vectorization
@@ -299,6 +335,7 @@ model.alphas= alphas(idx);
 model.w = ((alphas.*Y)'*X)';
 
 end
+%%
 function sim = gaussianKernel(x1, x2, sigma)
 %RBFKERNEL returns a radial basis function kernel between x1 and x2
 %   sim = gaussianKernel(x1, x2) returns a gaussian kernel between x1 and x2
@@ -317,14 +354,11 @@ sim = 0;
 %
 %    
 sim = exp(-((x1 - x2)'*(x1 - x2))/(2 * sigma^2));
-
-
-
-
+[x1 x2 sigma sim sim^.01]
 % =============================================================
     
 end
-
+%%
 function visualizeBoundary(X, y, model, varargin)
 %VISUALIZEBOUNDARY plots a non-linear decision boundary learned by the SVM
 %   VISUALIZEBOUNDARYLINEAR(X, y, model) plots a non-linear decision 
@@ -349,7 +383,7 @@ contour(X1, X2, vals, [0 0], 'Color', 'b');
 hold off;
 
 end
-
+%%
 function plotData(X, y)
 %PLOTDATA Plots the data points X and y into a new figure 
 %   PLOTDATA(x,y) plots the data points with + for the positive examples
@@ -367,9 +401,10 @@ plot(X(neg, 1), X(neg, 2), 'ko', 'MarkerFaceColor', 'y', 'MarkerSize', 7)
 hold off;
 
 end
-
+%%
 
 function pred = svmPredict(model, X)
+
 %SVMPREDICT returns a vector of predictions using a trained SVM model
 %(svmTrain). 
 %   pred = SVMPREDICT(model, X) returns a vector of predictions using a 
@@ -397,10 +432,17 @@ if strcmp(func2str(model.kernelFunction), 'linearKernel')
 elseif strfind(func2str(model.kernelFunction), 'gaussianKernel')
     % Vectorized RBF Kernel
     % This is equivalent to computing the kernel on every pair of examples
-    X1 = sum(X.^2, 2);
-    X2 = sum(model.X.^2, 2)';
-    K = bsxfun(@plus, X1, bsxfun(@plus, X2, - 2 * X * model.X'));
+    X1 = sum(X.^2, 2)
+    X2 = sum(model.X.^2, 2)'
+    K = bsxfun(@plus, X2, - 2 * X * model.X')
+    K = bsxfun(@plus, X1, K);
+    
     K = model.kernelFunction(1, 0) .^ K;
+
+Kkk = model.kernelFunction(1, 0)^.01
+model.kernelFunction
+  
+  
     K = bsxfun(@times, model.y', K);
     K = bsxfun(@times, model.alphas', K);
     p = sum(K, 2);
@@ -422,36 +464,7 @@ pred(p >= 0) =  1;
 pred(p <  0) =  0;
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+%%
 
 function [Entropy] = Energy_Entropy_Block(f,winLength,winStep,numOfShortBlocks)
 
@@ -477,4 +490,150 @@ for (i=1:numOfBlocks)
     curPos = curPos + winStep;
 end
 
-e
+end
+
+
+
+
+%%
+function Z = zcr(signal,windowLength, step, fs);
+signal = signal / max(abs(signal));
+curPos = 1;
+L = length(signal);
+numOfFrames = floor((L-windowLength)/step) + 1;
+%H = hamming(windowLength);
+Z = zeros(numOfFrames,1);
+for (i=1:numOfFrames)
+    window = (signal(curPos:curPos+windowLength-1));    
+    window2 = zeros(size(window));
+    window2(2:end) = window(1:end-1);
+    Z(i) = (1/(2*windowLength)) * sum(abs(sign(window)-sign(window2)));
+    curPos = curPos + step;
+end
+
+end
+
+
+%%
+function mC = SpectralRollOff(signal,windowLength, step, c, fs)
+signal = signal / max(abs(signal));
+curPos = 1;
+L = length(signal);
+numOfFrames = (L-windowLength)/step + 1;
+H = hamming(windowLength);
+m = [0:windowLength-1]';
+for (i=1:numOfFrames)
+    window = (signal(curPos:curPos+windowLength-1));    
+    FFT = (abs(fft(window,512)));
+    FFT = FFT(1:255);
+    totalEnergy = sum(FFT);
+    curEnergy = 0.0;
+    countFFT = 1;
+    while ((curEnergy<=c*totalEnergy) && (countFFT<=255))
+        curEnergy = curEnergy + FFT(countFFT);
+        countFFT = countFFT + 1;
+    end
+    mC(i) = ((countFFT-1))/(fs/2);
+    curPos = curPos + step;
+end
+end
+
+%%
+function En = SpectralEntropy(signal,windowLength,windowStep, fftLength, numOfBins);
+signal = signal / max(abs(signal));
+curPos = 1;
+L = length(signal);
+numOfFrames = floor((L-windowLength)/windowStep) + 1;
+H = hamming(windowLength);
+En = zeros(numOfFrames,1);
+h_step = fftLength / numOfBins;
+
+for (i=1:numOfFrames)
+    window = (H.*signal(curPos:curPos+windowLength-1));
+    fftTemp = abs(fft(window,2*fftLength));
+    fftTemp = fftTemp(1:fftLength);
+    S = sum(fftTemp);    
+    
+    for (j=1:numOfBins)
+        x(j) = sum(fftTemp((j-1)*h_step + 1: j*h_step)) / S;
+    end
+    En(i) = -sum(x.*log2(x));
+    curPos = curPos + windowStep;
+end
+end
+
+
+
+%%
+function C = SpectralCentroid(signal,windowLength, step, fs)
+signal = signal / max(abs(signal));
+curPos = 1;
+L = length(signal);
+numOfFrames = floor((L-windowLength)/step) + 1;
+H = hamming(windowLength);
+m = ((fs/(2*windowLength))*[1:windowLength])';
+C = zeros(numOfFrames,1);
+for (i=1:numOfFrames)
+    window = H.*(signal(curPos:curPos+windowLength-1));    
+    FFT = (abs(fft(window,2*windowLength)));
+    FFT = FFT(1:windowLength);  
+    FFT = FFT / max(FFT);
+    C(i) = sum(m.*FFT)/sum(FFT);
+    if (sum(window.^2)<0.010)
+        C(i) = 0.0;
+    end
+    curPos = curPos + step;
+end
+C = C / (fs/2);
+end
+
+
+%%
+function F = SpectralFlux(signal,windowLength, step, fs)
+signal = signal / max(abs(signal));
+curPos = 1;
+L = length(signal);
+numOfFrames = floor((L-windowLength)/step) + 1;
+H = hamming(windowLength);
+m = [0:windowLength-1]';
+F = zeros(numOfFrames,1);
+for (i=1:numOfFrames)
+    window = H.*(signal(curPos:curPos+windowLength-1));    
+    FFT = (abs(fft(window,2*windowLength)));
+    FFT = FFT(1:windowLength);        
+    FFT = FFT / max(FFT);
+    if (i>1)
+        F(i) = sum((FFT-FFTprev).^2);
+    else
+        F(i) = 0;
+    end
+    curPos = curPos + step;
+    FFTprev = FFT;
+end
+end
+
+
+%%
+function E = ShortTimeEnergy(signal, windowLength,step);
+signal = signal / max(max(signal));
+curPos = 1;
+L = length(signal);
+numOfFrames = floor((L-windowLength)/step) + 1;
+%H = hamming(windowLength);
+E = zeros(numOfFrames,1);
+for (i=1:numOfFrames)
+    window = (signal(curPos:curPos+windowLength-1));
+    E(i) = (1/(windowLength)) * sum(abs(window.^2));
+    curPos = curPos + step;
+end
+%Max = max(E);
+%med = median(E);
+%m = mean(E);
+%a = length(find(E>2*med))/numOfFrames;
+%b = length(find(E<(med/2)))/numOfFrames;
+
+%S_EnergyM = length(find(E>2*med))/numOfFrames;
+%S_EnergyV = length(find(E<(med/2)))/numOfFrames;
+%S_EnergyM = std(E);
+%S_EnergyV = a;
+end
