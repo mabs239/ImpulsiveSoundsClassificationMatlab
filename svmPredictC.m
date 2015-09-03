@@ -10,10 +10,10 @@ function main
 
 %     x1 = [1 2 1]; 
 %     x2 = [1 -4 0]; 
-    x1=1;x2=1;
+%     x1=1;x2=1;
 %     sigma = 5;
-    C = 20; 
-    sigma = 0.1;
+%     C = 20; 
+%     sigma = 0.1;
 
 %     model= svmTrain(X, y, C, @(x1, x2) gaussianKernel(x1, x2, sigma))
 %     save('model.mat', 'model');
@@ -432,20 +432,22 @@ if strcmp(func2str(model.kernelFunction), 'linearKernel')
 elseif strfind(func2str(model.kernelFunction), 'gaussianKernel')
     % Vectorized RBF Kernel
     % This is equivalent to computing the kernel on every pair of examples
+    
+    X=X
+    model.X
     X1 = sum(X.^2, 2)
     X2 = sum(model.X.^2, 2)'
-    K = bsxfun(@plus, X2, - 2 * X * model.X')
-    K = bsxfun(@plus, X1, K);
+    K1 = - 2 * X * model.X'
+    K2 = bsxfun(@plus, X2, K1)
+    K3 = bsxfun(@plus, X1, K2)
+    K4 = model.kernelFunction(1, 0) .^ K3
     
-    K = model.kernelFunction(1, 0) .^ K;
-
-Kkk = model.kernelFunction(1, 0)^.01
-model.kernelFunction
-  
-  
-    K = bsxfun(@times, model.y', K);
-    K = bsxfun(@times, model.alphas', K);
-    p = sum(K, 2);
+    model.y'
+    K5 = bsxfun(@times, model.y', K4)
+    model.alphas'
+    
+    K6 = bsxfun(@times, model.alphas', K5)
+    p = sum(K6, 2)
 else
     % Other Non-linear kernel
     for i = 1:m
@@ -460,6 +462,7 @@ else
 end
 
 % Convert predictions into 0 / 1
+p
 pred(p >= 0) =  1;
 pred(p <  0) =  0;
 
